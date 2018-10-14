@@ -2,3 +2,4 @@
 mod palindrome;
 mod fizz_buzz;
 mod count_words;
+mod count_vowels;
