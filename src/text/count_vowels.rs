@@ -1,18 +1,14 @@
 pub fn count_vowels(input: String) -> u32 {
-    let mut chars_iter = input.chars();
     let mut count: u32 = 0;
 
-    loop {
-        count += match chars_iter.next() {
-            Some(_char) => match _char {
-                'a' => 1,
-                'e' => 1,
-                'i' => 1,
-                'o' => 1,
-                'u' => 1,
-                _ => 0
-            },
-            None => break
+    for _char in input.chars() {
+        count += match _char {
+            'a' => 1,
+            'e' => 1,
+            'i' => 1,
+            'o' => 1,
+            'u' => 1,
+            _ => 0
         }
     }
     count
