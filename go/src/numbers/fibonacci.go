@@ -1,4 +1,4 @@
-package fibonacci
+package numbers
 
 // Fibonacci generates a fibonacci sequence up to n numbers, where n must be 2 or larger
 func Fibonacci(n int) []int {
