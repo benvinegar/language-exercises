@@ -3,12 +3,16 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"fmt"
+	"flag"
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 )
+
+const escapeLightRed = "\u001b[1;31m"
+const escapeEnd = "\u001b[0m"
 
 func check(e error) {
 	if e != nil {
@@ -17,15 +21,38 @@ func check(e error) {
 }
 
 func main() {
-	pattern := os.Args[1]
-	dir := os.Args[2]
+	countLines := flag.Bool("count", false, "Only a count of selected lines is written to standard output.")
 
-	patternSub := "\u001b[1;31m" + pattern + "\u001b[0m"
+	flag.Parse()
+
+	pattern := flag.Arg(0)
+	dir := flag.Arg(1)
 
 	data, err := ioutil.ReadFile(dir)
 	check(err)
 
 	reader := bufio.NewReader(bytes.NewReader(data))
+	writer := bufio.NewWriter(os.Stdout)
+	defer writer.Flush()
+
+	var onMatch func(line string)
+	var onEnd = func() {}
+	if *countLines {
+		count := 0
+		onMatch = func(line string) {
+			count++
+		}
+		onEnd = func() {
+			writer.WriteString(strconv.Itoa(count) + "\n")
+		}
+	} else {
+		patternSub := escapeLightRed + pattern + escapeEnd
+		onMatch = func(line string) {
+			replaced := strings.ReplaceAll(string(line), pattern, patternSub)
+			_, err := writer.WriteString(replaced)
+			check(err)
+		}
+	}
 
 	for {
 		line, _, err := reader.ReadLine()
@@ -35,8 +62,9 @@ func main() {
 		check(err)
 
 		if strings.Contains(string(line), pattern) {
-			replaced := strings.ReplaceAll(string(line), pattern, patternSub)
-			fmt.Println(replaced)
+			onMatch(string(line))
 		}
 	}
+
+	onEnd()
 }
