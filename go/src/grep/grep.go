@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,6 +14,11 @@ import (
 
 const escapeLightRed = "\u001b[1;31m"
 const escapeEnd = "\u001b[0m"
+const programName = "grep"
+
+type grepOpts struct {
+	countLines bool
+}
 
 func check(e error) {
 	if e != nil {
@@ -26,10 +32,18 @@ func main() {
 	flag.Parse()
 
 	pattern := flag.Arg(0)
-	dir := flag.Arg(1)
+	path := flag.Arg(1)
 
-	data, err := ioutil.ReadFile(dir)
-	check(err)
+	opts := grepOpts{*countLines}
+	Grep(pattern, path, opts)
+}
+
+// Grep searches the file located at `path` for matches of `pattern`
+func Grep(pattern string, path string, opts grepOpts) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v: %v\n", programName, err)
+	}
 
 	reader := bufio.NewReader(bytes.NewReader(data))
 	writer := bufio.NewWriter(os.Stdout)
@@ -37,7 +51,7 @@ func main() {
 
 	var onMatch func(line string)
 	var onEnd = func() {}
-	if *countLines {
+	if opts.countLines {
 		count := 0
 		onMatch = func(line string) {
 			count++
