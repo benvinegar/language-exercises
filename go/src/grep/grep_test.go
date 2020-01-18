@@ -24,8 +24,7 @@ func TestGrep(t *testing.T) {
 	assert.Equal(t, "", buf.String())
 
 	reader.Reset(bytes.NewReader(data))
-	buf = bytes.NewBuffer(make([]byte, 0))
-	writer.Reset(buf)
+	buf.Reset()
 
 	// a single match
 	Grep("accumsan", reader, writer, GrepOpts{})
@@ -35,8 +34,7 @@ func TestGrep(t *testing.T) {
 	assert.Equal(t, expected, buf.String())
 
 	reader.Reset(bytes.NewReader(data))
-	buf = bytes.NewBuffer(make([]byte, 0))
-	writer.Reset(buf)
+	buf.Reset()
 
 	// multiple matches
 	Grep("ultrices", reader, writer, GrepOpts{})
