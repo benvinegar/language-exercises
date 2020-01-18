@@ -16,7 +16,8 @@ const escapeLightRed = "\u001b[1;31m"
 const escapeEnd = "\u001b[0m"
 const programName = "grep"
 
-type grepOpts struct {
+// GrepOpts holds options passed to the Grep function
+type GrepOpts struct {
 	countLines bool
 }
 
@@ -34,12 +35,8 @@ func main() {
 	pattern := flag.Arg(0)
 	path := flag.Arg(1)
 
-	opts := grepOpts{*countLines}
-	Grep(pattern, path, opts)
-}
+	opts := GrepOpts{*countLines}
 
-// Grep searches the file located at `path` for matches of `pattern`
-func Grep(pattern string, path string, opts grepOpts) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v: %v\n", programName, err)
@@ -48,6 +45,12 @@ func Grep(pattern string, path string, opts grepOpts) {
 	reader := bufio.NewReader(bytes.NewReader(data))
 	writer := bufio.NewWriter(os.Stdout)
 	defer writer.Flush()
+
+	Grep(pattern, reader, writer, opts)
+}
+
+// Grep searches the file located at `path` for matches of `pattern`
+func Grep(pattern string, reader *bufio.Reader, writer *bufio.Writer, opts GrepOpts) {
 
 	var onMatch func(line string)
 	var onEnd = func() {}
