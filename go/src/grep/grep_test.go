@@ -9,12 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGrep(t *testing.T) {
-
+func TestGrepBasic(t *testing.T) {
 	data, _ := ioutil.ReadFile("fixtures/loremipsum.txt")
 	reader := bufio.NewReader(bytes.NewReader(data))
 
-	buf := bytes.NewBuffer(make([]byte, 0)) // loremipsum.txt is 4011 chars
+	buf := bytes.NewBuffer(make([]byte, 0))
 	writer := bufio.NewWriter(buf)
 
 	// no matches
@@ -44,4 +43,36 @@ func TestGrep(t *testing.T) {
 		"Sed nunc. Nullam vitae mauris sed libero laoreet posuere. Morbi rhoncus. Duis id enim nec sapien fringilla volutpat. Morbi hendrerit, nulla sit amet consectetuer scelerisque, lacus leo sodales est, vel tempor sem leo nec lacus. Nam ligula. Sed non orci. Vestibulum ante ipsum primis in faucibus orci luctus et \u001b[1;31multrices\u001b[0m posuere cubilia Curae; Sed id metus. Praesent augue. Fusce a mi. Nulla nonummy. " +
 		"Donec ac mauris id metus faucibus aliquet. Duis semper lorem et diam. Donec eget velit. In scelerisque. Cras ut tellus vitae dui vestibulum rhoncus. Sed vel lectus eu est aliquam scelerisque. Donec et sapien et arcu scelerisque vestibulum. Vestibulum ante ipsum primis in faucibus orci luctus et \u001b[1;31multrices\u001b[0m posuere cubilia Curae; Nulla facilisi. Duis nulla. Pellentesque magna odio, auctor in, malesuada vel, hendrerit ut, neque. Aenean iaculis luctus orci. Aliquam vel neque ut diam congue convallis. Praesent \u001b[1;31multrices\u001b[0m, urna nec commodo pharetra, enim pede euismod sem, vitae euismod libero sapien non lacus. Vivamus velit. Suspendisse quis mauris. Phasellus rutrum dolor vitae nisl. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Nunc aliquet, sapien at ullamcorper facilisis, quam odio gravida mi, vitae molestie lectus massa eget neque. Phasellus hendrerit condimentum mauris. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos hymenaeos. "
 	assert.Equal(t, expected, buf.String())
+}
+
+func TestGrepCount(t *testing.T) {
+	data, _ := ioutil.ReadFile("fixtures/loremipsum.txt")
+	reader := bufio.NewReader(bytes.NewReader(data))
+
+	buf := bytes.NewBuffer(make([]byte, 0))
+	writer := bufio.NewWriter(buf)
+
+	// no matches
+	Grep("nomatches", reader, writer, GrepOpts{countLines: true})
+	writer.Flush()
+
+	assert.Equal(t, "0\n", buf.String())
+
+	reader.Reset(bytes.NewReader(data))
+	buf.Reset()
+
+	// a single match
+	Grep("accumsan", reader, writer, GrepOpts{countLines: true})
+	writer.Flush()
+
+	assert.Equal(t, "1\n", buf.String())
+
+	reader.Reset(bytes.NewReader(data))
+	buf.Reset()
+
+	// multiple matches
+	Grep("ultrices", reader, writer, GrepOpts{countLines: true})
+	writer.Flush()
+
+	assert.Equal(t, "3\n", buf.String()) // 3 lines (but 4 matches total; --count outputs lines matched)
 }
