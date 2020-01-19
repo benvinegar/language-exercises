@@ -53,13 +53,11 @@ func main() {
 
 // Grep searches the file located at `path` for matches of `pattern`
 func Grep(pattern string, reader *bufio.Reader, writer *bufio.Writer, opts GrepOpts) {
-
-	var patternRe *regexp.Regexp
 	if opts.caseInsensitive {
-		patternRe, _ = regexp.Compile("((?i)" + pattern + ")")
-	} else {
-		patternRe, _ = regexp.Compile("(" + pattern + ")")
+		pattern = "(?i)" + pattern
 	}
+	patternRe, err := regexp.Compile("(" + pattern + ")")
+	check(err)
 
 	var onMatch func(line string)
 	var onEnd = func() {}
