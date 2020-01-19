@@ -8,8 +8,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
-	"strings"
 )
 
 const escapeLightRed = "\u001b[1;31m"
@@ -18,7 +18,8 @@ const programName = "grep"
 
 // GrepOpts holds options passed to the Grep function
 type GrepOpts struct {
-	countLines bool
+	countLines      bool
+	caseInsensitive bool
 }
 
 func check(e error) {
@@ -29,13 +30,14 @@ func check(e error) {
 
 func main() {
 	countLines := flag.Bool("count", false, "Only a count of selected lines is written to standard output.")
+	caseInsensitive := flag.Bool("ignore-case", false, "Perform case insensitive matching.  By default, grep is case sensitive.")
 
 	flag.Parse()
 
 	pattern := flag.Arg(0)
 	path := flag.Arg(1)
 
-	opts := GrepOpts{*countLines}
+	opts := GrepOpts{*countLines, *caseInsensitive}
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -52,6 +54,13 @@ func main() {
 // Grep searches the file located at `path` for matches of `pattern`
 func Grep(pattern string, reader *bufio.Reader, writer *bufio.Writer, opts GrepOpts) {
 
+	var patternRe *regexp.Regexp
+	if opts.caseInsensitive {
+		patternRe, _ = regexp.Compile("((?i)" + pattern + ")")
+	} else {
+		patternRe, _ = regexp.Compile("(" + pattern + ")")
+	}
+
 	var onMatch func(line string)
 	var onEnd = func() {}
 	if opts.countLines {
@@ -63,10 +72,10 @@ func Grep(pattern string, reader *bufio.Reader, writer *bufio.Writer, opts GrepO
 			writer.WriteString(strconv.Itoa(count) + "\n")
 		}
 	} else {
-		patternSub := escapeLightRed + pattern + escapeEnd
+		patternSub := escapeLightRed + "$1" + escapeEnd
 		onMatch = func(line string) {
-			replaced := strings.ReplaceAll(string(line), pattern, patternSub)
-			_, err := writer.WriteString(replaced)
+			replaced := patternRe.ReplaceAllString(string(line), patternSub)
+			_, err := writer.WriteString(replaced + "\n")
 			check(err)
 		}
 	}
@@ -78,7 +87,7 @@ func Grep(pattern string, reader *bufio.Reader, writer *bufio.Writer, opts GrepO
 		}
 		check(err)
 
-		if strings.Contains(string(line), pattern) {
+		if patternRe.MatchString(string(line)) {
 			onMatch(string(line))
 		}
 	}
