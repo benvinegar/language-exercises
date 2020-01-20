@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -20,6 +21,8 @@ const programName = "grep"
 type GrepOpts struct {
 	countLines      bool
 	caseInsensitive bool
+	maxCount        int
+	maxCountEnabled bool
 }
 
 func check(e error) {
@@ -31,13 +34,14 @@ func check(e error) {
 func main() {
 	countLines := flag.Bool("count", false, "Only a count of selected lines is written to standard output.")
 	caseInsensitive := flag.Bool("ignore-case", false, "Perform case insensitive matching.  By default, grep is case sensitive.")
+	maxCount := flag.Int("max-count", math.MaxUint32, "Stop reading the file after num matches.")
 
 	flag.Parse()
 
 	pattern := flag.Arg(0)
 	path := flag.Arg(1)
 
-	opts := GrepOpts{*countLines, *caseInsensitive}
+	opts := GrepOpts{*countLines, *caseInsensitive, *maxCount, (*maxCount) != math.MaxUint32}
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -78,7 +82,13 @@ func Grep(pattern string, reader *bufio.Reader, writer *bufio.Writer, opts GrepO
 		}
 	}
 
+	matchCount := 0
 	for {
+		if opts.maxCountEnabled && matchCount >= opts.maxCount {
+			fmt.Println("stop!")
+			break
+		}
+
 		line, _, err := reader.ReadLine()
 		if err == io.EOF {
 			break
@@ -87,6 +97,7 @@ func Grep(pattern string, reader *bufio.Reader, writer *bufio.Writer, opts GrepO
 
 		if patternRe.MatchString(string(line)) {
 			onMatch(string(line))
+			matchCount++
 		}
 	}
 
