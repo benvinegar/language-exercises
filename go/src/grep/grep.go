@@ -43,12 +43,18 @@ func main() {
 
 	opts := GrepOpts{*countLines, *caseInsensitive, *maxCount, (*maxCount) != math.MaxUint32}
 
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v: %v\n", programName, err)
+	var data io.Reader
+	if path == "" {
+		data = os.Stdin
+	} else {
+		raw, err := ioutil.ReadFile(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v: %v\n", programName, err)
+		}
+		data = bytes.NewReader(raw)
 	}
 
-	reader := bufio.NewReader(bytes.NewReader(data))
+	reader := bufio.NewReader(data)
 	writer := bufio.NewWriter(os.Stdout)
 	defer writer.Flush()
 
